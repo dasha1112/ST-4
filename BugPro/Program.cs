@@ -3,8 +3,8 @@ using Stateless;
 
 public class Bug
 {
-    public enum State { Open, Assigned, Deferred, InProgress, Closed, Reopened }
-    private enum Trigger { Assign, Defer, StartProgress, Close, Reopen }
+    public enum State { Open, Assigned, Deferred, InProgress, Closed, InReview }
+    private enum Trigger { Assign, Defer, StartProgress, Close, MarkAsDone }
 
     private StateMachine<State, Trigger> sm;
 
@@ -13,28 +13,28 @@ public class Bug
         sm = new StateMachine<State, Trigger>(state);
 
         sm.Configure(State.Open)
-            .Permit(Trigger.Assign, State.Assigned)
-            .Permit(Trigger.StartProgress, State.InProgress);
+          .Permit(Trigger.Assign, State.Assigned)
+          .Permit(Trigger.StartProgress, State.InProgress);
 
         sm.Configure(State.Assigned)
-            .Permit(Trigger.Close, State.Closed)
-            .Permit(Trigger.Defer, State.Deferred)
-            .Ignore(Trigger.Assign);
+          .Permit(Trigger.Close, State.Closed)
+          .Permit(Trigger.Defer, State.Deferred)
+          .Ignore(Trigger.Assign);
 
         sm.Configure(State.InProgress)
-            .Permit(Trigger.Close, State.Closed)
-            .Permit(Trigger.Defer, State.Deferred);
+          .Permit(Trigger.Close, State.Closed)
+          .Permit(Trigger.Defer, State.Deferred)
+          .Permit(Trigger.MarkAsDone, State.InReview);
 
         sm.Configure(State.Deferred)
-            .Permit(Trigger.Assign, State.Assigned);
+          .Permit(Trigger.Assign, State.Assigned);
 
         sm.Configure(State.Closed)
-            .Permit(Trigger.Assign, State.Assigned)
-            .Permit(Trigger.Reopen, State.Reopened);
+          .Permit(Trigger.Assign, State.Assigned)
+          .Permit(Trigger.MarkAsDone, State.InProgress);
 
-        sm.Configure(State.Reopened)
-            .Permit(Trigger.Assign, State.Assigned)
-            .Permit(Trigger.StartProgress, State.InProgress);
+        sm.Configure(State.InReview)
+          .Permit(Trigger.MarkAsDone, State.Closed);
     }
 
     public void Assign()
@@ -61,10 +61,10 @@ public class Bug
         Console.WriteLine("Close");
     }
 
-    public void Reopen()
+    public void MarkAsDone()
     {
-        sm.Fire(Trigger.Reopen);
-        Console.WriteLine("Reopen");
+        sm.Fire(Trigger.MarkAsDone);
+        Console.WriteLine("Mark As Done");
     }
 
     public State getState()
@@ -82,9 +82,8 @@ public class Program
         bug.StartProgress();
         bug.Defer();
         bug.Assign();
+        bug.MarkAsDone();
         bug.Close();
-        bug.Reopen();
-        bug.Assign();
         Console.WriteLine("Final State: " + bug.getState());
     }
 }

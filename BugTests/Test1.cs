@@ -71,27 +71,19 @@ namespace BugTests
         }
 
         [TestMethod]
-        public void Test_ClosedToReopened()
+        public void Test_ClosedToInProgress()
         {
             var bug = new Bug(Bug.State.Closed);
-            bug.Reopen();
-            Assert.AreEqual(Bug.State.Reopened, bug.getState());
-        }
-
-        [TestMethod]
-        public void Test_ReopenedToAssigned()
-        {
-            var bug = new Bug(Bug.State.Reopened);
-            bug.Assign();
-            Assert.AreEqual(Bug.State.Assigned, bug.getState());
-        }
-
-        [TestMethod]
-        public void Test_ReopenedToInProgress()
-        {
-            var bug = new Bug(Bug.State.Reopened);
-            bug.StartProgress();
+            bug.MarkAsDone();
             Assert.AreEqual(Bug.State.InProgress, bug.getState());
+        }
+
+        [TestMethod]
+        public void Test_InReviewToClosed()
+        {
+            var bug = new Bug(Bug.State.InReview);
+            bug.MarkAsDone();
+            Assert.AreEqual(Bug.State.Closed, bug.getState());
         }
 
         [TestMethod]
@@ -112,10 +104,10 @@ namespace BugTests
 
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException))]
-        public void Test_InvalidTransition_OpenToReopen()
+        public void Test_InvalidTransition_OpenToInReview()
         {
             var bug = new Bug(Bug.State.Open);
-            bug.Reopen();
+            bug.MarkAsDone();
         }
 
         [TestMethod]
@@ -157,30 +149,9 @@ namespace BugTests
         }
 
         [TestMethod]
-        public void Test_CycleTransitions()
-        {
-            var bug = new Bug(Bug.State.Closed);
-            bug.Reopen();
-            bug.Assign();
-            bug.Close();
-            bug.Reopen();
-            bug.StartProgress();
-            Assert.AreEqual(Bug.State.InProgress, bug.getState());
-        }
-
-        [TestMethod]
         public void Test_IgnoreTransition_AssignedAssign()
         {
             var bug = new Bug(Bug.State.Assigned);
-            bug.Assign();
-            Assert.AreEqual(Bug.State.Assigned, bug.getState());
-        }
-
-        [TestMethod]
-        public void Test_IgnoreTransition_ReopenedAssignTwice()
-        {
-            var bug = new Bug(Bug.State.Reopened);
-            bug.Assign();
             bug.Assign();
             Assert.AreEqual(Bug.State.Assigned, bug.getState());
         }
@@ -191,6 +162,14 @@ namespace BugTests
         {
             var bug = new Bug(Bug.State.Closed);
             bug.Defer();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void Test_InvalidTransition_InReviewAssign()
+        {
+            var bug = new Bug(Bug.State.InReview);
+            bug.Assign();
         }
     }
 }
